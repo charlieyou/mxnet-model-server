@@ -4,12 +4,17 @@ COPY install.sh /
 
 RUN /install.sh
 
-RUN yes | pip uninstall mxnet && \
+RUN apt-get update && \
+    apt-get -y install build-essential libopencv-dev libopenblas-dev libjemalloc-dev libgfortran3 \
+    python-dev python3-dev git wget curl nginx
+    
+RUN apt-get install git wget && \
+    yes | pip uninstall mxnet && \
     cd /tmp && \
     git clone --recursive https://github.com/apache/incubator-mxnet mxnet && \
     cd /tmp/mxnet && \
     git checkout tags/0.12.1 -b 0.12.1 && git submodule update --recursive && \
-    sudo make -j$(nproc) USE_BLAS=openblas USE_MKL2017=1 USE_DIST_KVSTORE=1 && \
+    make -j$(nproc) USE_BLAS=openblas USE_MKL2017=1 USE_DIST_KVSTORE=1 && \
     cd /tmp/mxnet/python && \
     python setup.py install && \
     cd /tmp && \
