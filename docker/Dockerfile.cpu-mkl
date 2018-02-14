@@ -10,17 +10,17 @@ RUN apt-get update && \
     
 RUN pip uninstall --yes mxnet && \
     cd /tmp && \
+    git clone https://github.com/intel/mkl-dnn.git && \
+    cd /tmp/mkl-dnn/scripts && ./prepare_mkl.sh && cd /tmp/mkl-dnn && \
+    mkdir -p build && cd build && cmake .. && make && make install && \
+    cd /tmp && rm -rf /tmp/mkl-dnn && \
     git clone --recursive https://github.com/apache/incubator-mxnet mxnet && \
     cd /tmp/mxnet && \
     git checkout tags/1.0.0 -b 1.0.0 && git submodule update --recursive && \
     make -j$(nproc) USE_BLAS=openblas USE_MKL2017=1 USE_DIST_KVSTORE=1 && \
     cd /tmp/mxnet/python && \
     python setup.py install && \
-    cd /tmp && rm -fr /tmp/mxnet && \
-    git clone https://github.com/intel/mkl-dnn.git && \
-    cd /tmp/mkl-dnn/scripts && ./prepare_mkl.sh && cd /tmp/mkl-dnn && \
-    mkdir -p build && cd build && cmake .. && make && make install && \
-    cd / && rm -rf /tmp/mkl-dnn
+    cd / && rm -fr /tmp/mxnet
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
