@@ -6,24 +6,20 @@ RUN /install.sh
 
 RUN apt-get update && \
     apt-get -y install build-essential libopencv-dev libopenblas-dev libjemalloc-dev libgfortran3 \
-    python-dev python3-dev git wget curl nginx
+    python-dev python3-dev git wget curl nginx cmake
     
-RUN apt-get install git wget && \
-    yes | pip uninstall mxnet && \
+RUN pip uninstall --yes mxnet && \
     cd /tmp && \
     git clone --recursive https://github.com/apache/incubator-mxnet mxnet && \
     cd /tmp/mxnet && \
-    git checkout tags/0.12.1 -b 0.12.1 && git submodule update --recursive && \
+    git checkout tags/1.0.0 -b 1.0.0 && git submodule update --recursive && \
     make -j$(nproc) USE_BLAS=openblas USE_MKL2017=1 USE_DIST_KVSTORE=1 && \
     cd /tmp/mxnet/python && \
     python setup.py install && \
-    cd /tmp && \
-    rm -fr /tmp/mxnet && \
-    apt-get install cmake && \
+    cd /tmp && rm -fr /tmp/mxnet && \
     git clone https://github.com/intel/mkl-dnn.git && \
-    cd mkl-dnn/scripts && ./prepare_mkl.sh && cd .. && \
-    mkdir -p build && cd build && cmake .. && make && \
-    make install && \
+    cd /tmp/mkl-dnn/scripts && ./prepare_mkl.sh && cd /tmp/mkl-dnn && \
+    mkdir -p build && cd build && cmake .. && make && make install && \
     cd / && rm -rf /tmp/mkl-dnn
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
