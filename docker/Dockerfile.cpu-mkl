@@ -6,7 +6,7 @@ RUN /install.sh
 
 RUN apt-get update && \
     apt-get -y install build-essential libopencv-dev libopenblas-dev libjemalloc-dev libgfortran3 \
-    python-dev python3-dev git wget curl nginx cmake
+    python-dev git wget curl nginx cmake
     
 RUN pip uninstall --yes mxnet && \
     cd /tmp && \
