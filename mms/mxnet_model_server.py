@@ -155,25 +155,28 @@ class MMS(object):
             model_class_name = class_defs[0].__name__
 
             # Load models using registered model definitions
-            registered_models = self.serving_frontend.get_registered_modelservices()
-            ModelClassDef = registered_models[model_class_name]                        
+            registered_models = self.serving_frontend.get_registered_model_services()
+            ModelClassDef = registered_models[model_class_name]
 
             self.serving_frontend.load_models(self.models, ModelClassDef, self.gpu)
-            
+
             # Setup endpoint
             openapi_endpoints = self.serving_frontend.setup_openapi_endpoints(self.host, self.port)
+            logger.info("endpoints setup")
 
             # Generate client SDK
             if self.args.gen_api is not None:
                 ClientSDKGenerator.generate(openapi_endpoints, self.args.gen_api)
+                logger.info("sdk generated")
 
             # Generate metrics to target location (log, csv ...), default to log
             MetricsManager.start(self.args.metrics_write_to, self.args.models, Lock())
+            logger.info("metrics started")
 
         except Exception as e:
             logger.error('Failed to process arguments: ' + str(e))
             exit(1)
-        
+
 
 def start_serving(app_name='mms', args=None):
     """Start service routing.

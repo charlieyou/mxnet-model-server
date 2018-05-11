@@ -26,6 +26,7 @@ from mms.model_service.model_service import SingleNodeService, URL_PREFIX
 logger = get_logger()
 
 
+# TODO benchmark this
 def check_input_shape(inputs, signature):
     '''Check input data shape consistency with signature.
 
@@ -74,7 +75,7 @@ class MXNetBaseService(SingleNodeService):
             raise Exception('Failed to open model signiture file: %s' % signature_file_path)
 
         data_names = []
-        data_shapes = []
+        self.data_shapes = []
         for input in self._signature['inputs']:
             data_names.append(input['data_name'])
             # Replace 0 entry in data shape with 1 for binding executor.
@@ -84,7 +85,7 @@ class MXNetBaseService(SingleNodeService):
             for idx in range(len(data_shape)):
                 if data_shape[idx] == 0:
                     data_shape[idx] = 1
-            data_shapes.append((input['data_name'], tuple(data_shape)))
+            self.data_shapes.append((input['data_name'], tuple(data_shape)))
         
         # Load MXNet module
         epoch = 0
@@ -94,10 +95,11 @@ class MXNetBaseService(SingleNodeService):
         except Exception as e:
             logger.warning('Failed to parse epoch from param file, setting epoch to 0')
 
-        sym, arg_params, aux_params = mx.model.load_checkpoint('%s/%s' % (model_dir, manifest['Model']['Symbol'][:-12]), epoch)
+        sym, arg_params, aux_params = \
+            mx.model.load_checkpoint('%s/%s' % (model_dir, manifest['Model']['Symbol'][:-12]), epoch)
         self.mx_model = mx.mod.Module(symbol=sym, context=self.ctx,
                                       data_names=data_names, label_names=None)
-        self.mx_model.bind(for_training=False, data_shapes=data_shapes)
+        self.mx_model.bind(for_training=False, data_shapes=self.data_shapes)
         self.mx_model.set_params(arg_params, aux_params, allow_missing=True, allow_extra=True)
 
         # Read synset file
@@ -129,10 +131,17 @@ class MXNetBaseService(SingleNodeService):
             Inference output.
         '''
         # Check input shape
-        check_input_shape(data, self.signature)
+        # TODO fix input shape checking
+        # check_input_shape(data, self.signature)
         data = [item.as_in_context(self.ctx) for item in data]
-        self.mx_model.forward(DataBatch(data))
+        self.mx_model.forward(DataBatch(data, pad=16))
         return self.mx_model.get_outputs()
+
+    def set_batch_size(self, n):
+        logger.info("current data shape is %s" % str(self.data_shapes))
+        if self.data_shapes[0] != n:
+            self.data_shapes[0] = n
+            self.mx_model.reshape(data_shapes=self.data_shapes)
 
     def ping(self):
         '''Ping to get system's health.

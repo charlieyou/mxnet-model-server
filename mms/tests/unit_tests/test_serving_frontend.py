@@ -28,7 +28,7 @@ class TestServingFrontend(unittest.TestCase):
     def test_register_module(self):
         # Mock 
         ret = [MXNetVisionService]
-        self.test_frontend.service_manager.parse_modelservices_from_module = mock.Mock(return_value=ret)
+        self.test_frontend.service_manager.parse_model_services_from_module = mock.Mock(return_value=ret)
         self.test_frontend.service_manager.add_modelservice_to_registry = mock.Mock()
 
         self.assertEqual(self.test_frontend.register_module('mx_vision_service'), ret)
